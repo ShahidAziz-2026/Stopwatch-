@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- =====================================================
+       PAGE TITLE & DESCRIPTION
+       Shown in browser tab and as fallback for link previews
+  ====================================================== -->
+  <title>Stopwatch – Precision Timer</title>
+  <meta name="description" content="A clean, elegant stopwatch app with start, stop, and reset controls. Built with HTML, CSS & JavaScript." />
+
+  <!-- =====================================================
+       OPEN GRAPH (OG) META TAGS
+       These tags tell Facebook (and other social networks)
+       what image, title, and description to show when
+       someone shares or pastes this link.
+
+       IMPORTANT: Replace the content="" values below with
+       your actual GitHub Pages URL after deployment.
+       The image path must be an absolute URL pointing
+       to preview.png in the same folder as index.html.
+  ====================================================== -->
+  <meta property="og:type"        content="website" />
+  <meta property="og:title"       content="Stopwatch – Precision Timer" />
+  <meta property="og:description" content="A clean, elegant stopwatch with start, stop, and reset. Open and use instantly in any browser." />
+  <!-- ⬇️ Replace this URL with your real GitHub Pages URL + /preview.png -->
+  <meta property="og:image"       content="https://YOUR-USERNAME.github.io/YOUR-REPO/preview.png" />
+  <!-- ⬇️ Replace this URL with the real URL of the page -->
+  <meta property="og:url"         content="https://YOUR-USERNAME.github.io/YOUR-REPO/" />
+  <meta property="og:image:width"  content="1200" />
+  <meta property="og:image:height" content="630" />
+
+  <!-- Twitter Card (optional but recommended) -->
+  <meta name="twitter:card"        content="summary_large_image" />
+  <meta name="twitter:title"       content="Stopwatch – Precision Timer" />
+  <meta name="twitter:description" content="A clean, elegant stopwatch with start, stop, and reset." />
+  <meta name="twitter:image"       content="https://YOUR-USERNAME.github.io/YOUR-REPO/preview.png" />
+
+  <!-- =====================================================
+       GOOGLE FONTS
+       "Orbitron" — digital / monospace display font
+       for the timer digits (evokes classic LCD readouts).
+       "DM Sans" — clean, modern body / button font.
+  ====================================================== -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+
+  <!-- =====================================================
+       STYLES
+       All visual styling lives here.
+       CSS custom properties (variables) at :root make
+       it trivial to re-theme the whole app in one place.
+  ====================================================== -->
+  <style>
+    /* ── CSS Reset ─────────────────────────────────────── */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* ── Design Tokens / CSS Variables ─────────────────── */
+    :root {
+      --bg:          #0b0c10;        /* near-black page background   */
+      --surface:     #13151c;        /* card / panel background       */
+      --ring:        #1f2233;        /* dial ring color               */
+      --accent:      #00e5ff;        /* electric cyan — primary glow  */
+      --accent-dim:  #007a8a;        /* muted accent for inactive     */
+      --text-main:   #e8eaf6;        /* primary text                  */
+      --text-muted:  #5c6382;        /* secondary / label text        */
+      --btn-start:   #00e5ff;
+      --btn-stop:    #ff4d6d;
+      --btn-reset:   #2a2d3e;
+      --glow:        0 0 40px rgba(0, 229, 255, 0.25);
+      --font-timer:  'Orbitron', monospace;
+      --font-ui:     'DM Sans', sans-serif;
+    }
+
+    /* ── Page Layout ────────────────────────────────────── */
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      font-family: var(--font-ui);
+      background-color: var(--bg);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      /* Subtle dot-grid background texture */
+      background-image: radial-gradient(circle, #1e2030 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+
+    /* ── App Header ─────────────────────────────────────── */
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+      animation: fadeDown 0.6s ease both;
+    }
+
+    header h1 {
+      font-family: var(--font-ui);
+      font-weight: 300;
+      font-size: clamp(0.85rem, 2vw, 1rem);
+      letter-spacing: 0.45em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    header h1 span {
+      color: var(--accent);
+    }
+
+    /* ── Main Card ──────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--ring);
+      border-radius: 28px;
+      padding: 3rem 3.5rem 2.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2.5rem;
+      box-shadow: var(--glow), 0 32px 80px rgba(0,0,0,0.5);
+      animation: fadeUp 0.6s 0.1s ease both;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Decorative top-edge glow line */
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 10%; right: 10%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      opacity: 0.6;
+    }
+
+    /* ── Timer Dial (circular ring decoration) ──────────── */
+    .dial {
+      position: relative;
+      width: 260px;
+      height: 260px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* SVG ring drawn with CSS animation */
+    .dial svg {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      transform: rotate(-90deg); /* start arc from top */
+    }
+
+    /* Background ring track */
+    .dial svg .track {
+      fill: none;
+      stroke: var(--ring);
+      stroke-width: 3;
+    }
+
+    /* Animated progress ring — driven by JS */
+    .dial svg .progress {
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-dasharray: 720;      /* circumference ≈ 2π×r (r=114.6) */
+      stroke-dashoffset: 720;     /* start fully hidden               */
+      transition: stroke-dashoffset 0.1s linear,
+                  stroke 0.3s ease;
+      filter: drop-shadow(0 0 6px var(--accent));
+    }
+
+    /* ── Timer Display Text ─────────────────────────────── */
+    .time-display {
+      text-align: center;
+      z-index: 1;
+    }
+
+    /* HH:MM:SS */
+    .time-display .hms {
+      font-family: var(--font-timer);
+      font-size: clamp(2.4rem, 8vw, 3.2rem);
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--text-main);
+      line-height: 1;
+    }
+
+    /* Milliseconds shown smaller below */
+    .time-display .ms {
+      font-family: var(--font-timer);
+      font-size: clamp(1rem, 3vw, 1.3rem);
+      font-weight: 400;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+      margin-top: 0.3rem;
+      opacity: 0.85;
+    }
+
+    /* ── Status Label ───────────────────────────────────── */
+    .status {
+      font-size: 0.7rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-top: -1rem;          /* pull up toward dial  */
+      transition: color 0.3s ease;
+    }
+
+    .status.running { color: var(--accent); }
+    .status.stopped { color: var(--btn-stop); }
+
+    /* ── Control Buttons ────────────────────────────────── */
+    .controls {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    /* Base button style */
+    .btn {
+      font-family: var(--font-ui);
+      font-size: 0.8rem;
+      font-weight: 500;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      border: none;
+      border-radius: 100px;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
+      outline: none;
+      padding: 0;
+    }
+
+    .btn:active { transform: scale(0.94); }
+
+    /* Primary circular button (Start / Stop) */
+    .btn-primary {
+      width: 80px;
+      height: 80px;
+      background: var(--btn-start);
+      color: #000;
+      border-radius: 50%;
+      font-size: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 24px rgba(0, 229, 255, 0.4);
+    }
+
+    .btn-primary:hover {
+      transform: scale(1.07);
+      box-shadow: 0 0 36px rgba(0, 229, 255, 0.6);
+    }
+
+    /* When timer is running, Start button becomes Stop (red) */
+    .btn-primary.stop-mode {
+      background: var(--btn-stop);
+      box-shadow: 0 0 24px rgba(255, 77, 109, 0.4);
+    }
+
+    .btn-primary.stop-mode:hover {
+      box-shadow: 0 0 36px rgba(255, 77, 109, 0.6);
+    }
+
+    /* Secondary pill button (Reset) */
+    .btn-secondary {
+      height: 48px;
+      padding: 0 1.5rem;
+      background: var(--btn-reset);
+      color: var(--text-muted);
+      border: 1px solid var(--ring);
+    }
+
+    .btn-secondary:hover {
+      color: var(--text-main);
+      border-color: var(--accent-dim);
+      transform: scale(1.04);
+    }
+
+    /* ── Footer ─────────────────────────────────────────── */
+    footer {
+      margin-top: 2rem;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      letter-spacing: 0.15em;
+      opacity: 0.5;
+      animation: fadeUp 0.6s 0.25s ease both;
+    }
+
+    /* ── Keyframe Animations ────────────────────────────── */
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Subtle pulse on the digit when running */
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.75; }
+    }
+
+    .time-display.ticking .hms {
+      animation: pulse 1.8s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- =====================================================
+       APP HEADER
+  ====================================================== -->
+  <header>
+    <h1>STOP<span>WATCH</span></h1>
+  </header>
+
+  <!-- =====================================================
+       MAIN CARD
+  ====================================================== -->
+  <main class="card" role="main" aria-label="Stopwatch">
+
+    <!-- Circular dial with SVG progress ring -->
+    <div class="dial" aria-hidden="true">
+      <svg viewBox="0 0 260 260" xmlns="http://www.w3.org/2000/svg">
+        <!-- Static track ring -->
+        <circle class="track"    cx="130" cy="130" r="114" />
+        <!-- Animated progress ring; stroke-dashoffset controlled by JS -->
+        <circle class="progress" cx="130" cy="130" r="114" id="progressRing" />
+      </svg>
+
+      <!-- Time readout centred inside the dial -->
+      <div class="time-display" id="timeDisplay" aria-live="polite" aria-atomic="true">
+        <div class="hms" id="hms">00:00:00</div>
+        <div class="ms"  id="ms">.00</div>
+      </div>
+    </div>
+
+    <!-- Running / stopped status label -->
+    <div class="status" id="statusLabel">READY</div>
+
+    <!-- Controls row: Reset | Start/Stop -->
+    <div class="controls" role="group" aria-label="Stopwatch controls">
+
+      <!-- Reset button — always visible, clears time -->
+      <button
+        class="btn btn-secondary"
+        id="btnReset"
+        aria-label="Reset stopwatch"
+      >Reset</button>
+
+      <!-- Start / Stop toggle button -->
+      <button
+        class="btn btn-primary"
+        id="btnStartStop"
+        aria-label="Start stopwatch"
+      >Start</button>
+
+    </div>
+  </main>
+
+  <!-- =====================================================
+       FOOTER
+  ====================================================== -->
+  <footer>HTML · CSS · JS &nbsp;|&nbsp; Stopwatch App</footer>
+
+  <!-- =====================================================
+       JAVASCRIPT
+       All stopwatch logic lives here.
+       No external libraries required.
+  ====================================================== -->
+  <script>
+    /* ── Element References ─────────────────────────────── */
+    const hmsEl       = document.getElementById('hms');
+    const msEl        = document.getElementById('ms');
+    const statusEl    = document.getElementById('statusLabel');
+    const btnStartStop= document.getElementById('btnStartStop');
+    const btnReset    = document.getElementById('btnReset');
+    const timeDisplay = document.getElementById('timeDisplay');
+    const progressRing= document.getElementById('progressRing');
+
+    /* ── SVG Ring Constants ─────────────────────────────── */
+    // Circumference = 2 × π × radius  →  2 × π × 114 ≈ 716.3
+    // We use 716 as the stroke-dasharray value (set in CSS as 720 ≈ close enough).
+    const CIRCUMFERENCE = 2 * Math.PI * 114; // ≈ 716.3
+
+    /* ── State Variables ────────────────────────────────── */
+    let startTime   = 0;    // timestamp when timer last started (ms)
+    let elapsed     = 0;    // total elapsed time accumulated (ms)
+    let timerID     = null; // requestAnimationFrame handle
+    let isRunning   = false;
+
+    /* ── Helpers ────────────────────────────────────────── */
+
+    /**
+     * Pad a number to `n` digits with leading zeros.
+     * @param {number} num
+     * @param {number} n   – desired width (default 2)
+     * @returns {string}
+     */
+    function pad(num, n = 2) {
+      return String(Math.floor(num)).padStart(n, '0');
+    }
+
+    /**
+     * Update the DOM elements to display the given elapsed time.
+     * Also updates the SVG progress ring (one full rotation = 60 seconds).
+     * @param {number} totalMs – elapsed milliseconds
+     */
+    function render(totalMs) {
+      const totalSec = Math.floor(totalMs / 1000);
+      const hours    = Math.floor(totalSec / 3600);
+      const minutes  = Math.floor((totalSec % 3600) / 60);
+      const seconds  = totalSec % 60;
+      const centis   = Math.floor((totalMs % 1000) / 10); // centiseconds
+
+      // Update HH:MM:SS and centiseconds
+      hmsEl.textContent = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+      msEl.textContent  = `.${pad(centis)}`;
+
+      // Update SVG ring: one full rotation every 60 seconds
+      const progress      = (totalSec % 60) / 60;                         // 0 → 1
+      const dashOffset    = CIRCUMFERENCE - progress * CIRCUMFERENCE;      // shrinks as time passes
+      progressRing.style.strokeDasharray  = CIRCUMFERENCE;
+      progressRing.style.strokeDashoffset = dashOffset;
+    }
+
+    /**
+     * The animation loop — called on every animation frame while running.
+     * Calculates elapsed time and requests the next frame.
+     */
+    function tick() {
+      const now    = performance.now();
+      const total  = elapsed + (now - startTime);
+      render(total);
+      timerID = requestAnimationFrame(tick);
+    }
+
+    /* ── Actions ────────────────────────────────────────── */
+
+    /** Start the stopwatch. */
+    function start() {
+      if (isRunning) return;
+      isRunning          = true;
+      startTime          = performance.now();
+
+      // UI: switch button to "Stop" mode (red)
+      btnStartStop.textContent  = 'Stop';
+      btnStartStop.setAttribute('aria-label', 'Stop stopwatch');
+      btnStartStop.classList.add('stop-mode');
+
+      // UI: status label + digit pulse
+      statusEl.textContent = 'RUNNING';
+      statusEl.className   = 'status running';
+      timeDisplay.classList.add('ticking');
+
+      // Begin animation loop
+      timerID = requestAnimationFrame(tick);
+    }
+
+    /** Stop (pause) the stopwatch. */
+    function stop() {
+      if (!isRunning) return;
+      isRunning  = false;
+
+      // Accumulate elapsed time so we can resume correctly
+      elapsed   += performance.now() - startTime;
+
+      // Cancel the animation loop
+      cancelAnimationFrame(timerID);
+      timerID = null;
+
+      // UI: switch button back to "Start" mode (cyan)
+      btnStartStop.textContent = 'Start';
+      btnStartStop.setAttribute('aria-label', 'Start stopwatch');
+      btnStartStop.classList.remove('stop-mode');
+
+      // UI: status label + remove pulse
+      statusEl.textContent = 'STOPPED';
+      statusEl.className   = 'status stopped';
+      timeDisplay.classList.remove('ticking');
+    }
+
+    /** Reset the stopwatch to zero. */
+    function reset() {
+      // Stop any running loop first
+      if (isRunning) stop();
+
+      // Clear accumulated time
+      elapsed = 0;
+
+      // Render zeroed display
+      render(0);
+
+      // Reset the SVG ring to empty
+      progressRing.style.strokeDashoffset = CIRCUMFERENCE;
+
+      // UI: restore initial state
+      statusEl.textContent = 'READY';
+      statusEl.className   = 'status';
+    }
+
+    /* ── Event Listeners ────────────────────────────────── */
+
+    // Start / Stop toggle button
+    btnStartStop.addEventListener('click', () => {
+      isRunning ? stop() : start();
+    });
+
+    // Reset button
+    btnReset.addEventListener('click', reset);
+
+    // Keyboard shortcut: Space = start/stop, R = reset
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();           // prevent page scroll
+        isRunning ? stop() : start();
+      }
+      if (e.code === 'KeyR') {
+        reset();
+      }
+    });
+
+    /* ── Initial Render ─────────────────────────────────── */
+    // Show zeroed display on page load
+    render(0);
+  </script>
+</body>
+</html>
